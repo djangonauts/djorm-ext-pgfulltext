@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from six import string_types
 import django
 from django.db import models
 from psycopg2.extensions import adapt
@@ -61,7 +62,7 @@ if django.VERSION[:2] >= (1,7):
             lhs, lhs_params = qn.compile(self.lhs)
             rhs, rhs_params = self.process_rhs(qn, connection)
 
-            if type(rhs_params) in [str, unicode]:
+            if type(rhs_params) in [string_types]:
                 rhs_params = [rhs_params]
 
             if type(rhs_params[0]) == TSConfig:
