@@ -5,6 +5,7 @@ import django
 from django.db import models
 from psycopg2.extensions import adapt
 
+
 class VectorField(models.Field):
     def __init__(self, *args, **kwargs):
         kwargs['null'] = True
@@ -17,7 +18,7 @@ class VectorField(models.Field):
     def db_type(self, *args, **kwargs):
         return 'tsvector'
 
-    #def get_prep_lookup(self, lookup_type, value):
+    # def get_prep_lookup(self, lookup_type, value):
     #    if hasattr(value, 'prepare'):
     #        return value.prepare()
     #    if hasattr(value, '_prepare'):
@@ -50,7 +51,6 @@ if django.VERSION[:2] >= (1, 7):
 
     def negative(wordlist):
         return ['!' + x for x in startswith(wordlist)]
-
 
     class TSConfig(object):
         def __init__(self, name):
@@ -111,7 +111,6 @@ if django.VERSION[:2] >= (1, 7):
 
         def transform(self, *args):
             return quotes(*args)
-
 
     class FullTextLookupStartsWith(FullTextLookupBase):
         """This lookup scans for full text index entries that BEGIN with
