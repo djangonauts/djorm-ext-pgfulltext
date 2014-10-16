@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
+from six import string_types
 import django
 from django.db import models
 from psycopg2.extensions import adapt
+
 
 class VectorField(models.Field):
     def __init__(self, *args, **kwargs):
@@ -16,7 +18,7 @@ class VectorField(models.Field):
     def db_type(self, *args, **kwargs):
         return 'tsvector'
 
-    #def get_prep_lookup(self, lookup_type, value):
+    # def get_prep_lookup(self, lookup_type, value):
     #    if hasattr(value, 'prepare'):
     #        return value.prepare()
     #    if hasattr(value, '_prepare'):
@@ -36,20 +38,19 @@ except ImportError:
     pass
 
 
-if django.VERSION[:2] >= (1,7):
+if django.VERSION[:2] >= (1, 7):
     # Create custom lookups for Django>= 1.7
 
     from django.db.models import Lookup
 
     def quotes(wordlist):
-        return ["%s" % adapt(x.replace("\\", "").encode('utf-8')) for x in wordlist]
+        return ["%s" % adapt(x.replace("\\", "")) for x in wordlist]
 
     def startswith(wordlist):
         return [x + ":*" for x in quotes(wordlist)]
 
     def negative(wordlist):
         return ['!' + x for x in startswith(wordlist)]
-
 
     class TSConfig(object):
         def __init__(self, name):
@@ -61,7 +62,7 @@ if django.VERSION[:2] >= (1,7):
             lhs, lhs_params = qn.compile(self.lhs)
             rhs, rhs_params = self.process_rhs(qn, connection)
 
-            if type(rhs_params) in [str, unicode]:
+            if type(rhs_params) in [string_types]:
                 rhs_params = [rhs_params]
 
             if type(rhs_params[0]) == TSConfig:
@@ -110,7 +111,6 @@ if django.VERSION[:2] >= (1,7):
 
         def transform(self, *args):
             return quotes(*args)
-
 
     class FullTextLookupStartsWith(FullTextLookupBase):
         """This lookup scans for full text index entries that BEGIN with
