@@ -10,7 +10,13 @@ class VectorField(models.Field):
         kwargs['default'] = ''
         kwargs['editable'] = False
         kwargs['serialize'] = False
-        kwargs['db_index'] = True
+
+        # user decides if this will be indexed or not
+        # when this is e.g. used to store tsvector type
+        # we usually don't want to use db_index=True but rather FTS index
+        # see https://github.com/djangonauts/djorm-ext-pgfulltext/issues/45
+        # kwargs['db_index'] = True
+
         super(VectorField, self).__init__(*args, **kwargs)
 
     def db_type(self, *args, **kwargs):
