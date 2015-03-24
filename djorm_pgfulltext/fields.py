@@ -10,6 +10,7 @@ import django
 from django.db import models
 from psycopg2.extensions import adapt
 
+
 class VectorField(models.Field):
 
     def __init__(self, *args, **kwargs):

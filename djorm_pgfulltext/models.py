@@ -3,6 +3,9 @@
 from itertools import repeat
 from django.db import models, connections
 from django.db.models.query import QuerySet
+from django.db.models.sql.aggregates import Aggregate as SQLAggregate
+from django.db.models import Aggregate
+import re
 
 # Compatibility import and fixes section.
 
@@ -45,6 +48,20 @@ except ImportError:
 
 def auto_update_search_field_handler(sender, instance, *args, **kwargs):
     instance.update_search_field()
+
+
+class SQLStringAgg(SQLAggregate):
+    sql_template = '%(function)s(%(field)s, \' \')'
+    sql_function = 'string_agg'
+
+
+class StringAgg(Aggregate):
+    name = 'StringAgg'
+
+    def add_to_query(self, query, alias, col, source, is_summary):
+        aggregate = SQLStringAgg(
+            col, source=source, is_summary=is_summary, **self.extra)
+        query.aggregates[alias] = aggregate
 
 
 class SearchManagerMixIn(object):
@@ -119,6 +136,9 @@ class SearchManagerMixIn(object):
     def search(self, *args, **kwargs):
         return self.get_queryset().search(*args, **kwargs)
 
+    def word_tree_search(self, *args, **kwargs):
+        return self.get_queryset().word_tree_search(*args, **kwargs)
+
     def update_search_field(self, pk=None, config=None, using=None):
         '''
         Update the search_field of one instance, or a list of instances, or
@@ -185,8 +205,9 @@ class SearchManagerMixIn(object):
                 parsed_fields.update([(x, None) for x in fields])
 
             # Does not support field.attname.
-            field_names = set(field.name for field in self.model._meta.fields if not field.primary_key)
-            non_model_fields = set(x[0] for x in parsed_fields).difference(field_names)
+            to_search = (self.model._meta.fields + self.model._meta.many_to_many)
+            field_names = set(field.name for field in to_search if not field.primary_key)
+            non_model_fields = set(x[0].split('__')[0] for x in parsed_fields).difference(field_names)
             if non_model_fields:
                 raise ValueError("The following fields do not exist in this"
                                  " model: {0}".format(", ".join(x for x in non_model_fields)))
@@ -213,16 +234,36 @@ class SearchManagerMixIn(object):
         if not config:
             config = self.config
 
+        return "setweight(to_tsvector('%s', coalesce(%s, '')), '%s')" % \
+                    (config, self._get_field_value_query(field_name, using), weight)
+
+    def _get_field_value_query(self, field_name, using=None):
         if using is None:
             using = self.db
-
-        field = self.model._meta.get_field(field_name)
-
         connection = connections[using]
         qn = connection.ops.quote_name
+        if '__' not in field_name:
+            field = self.model._meta.get_field(field_name)
+            return '%s.%s' % (qn(self.model._meta.db_table), qn(field.column))
 
-        return "setweight(to_tsvector('%s', coalesce(%s.%s, '')), '%s')" % \
-                    (config, qn(self.model._meta.db_table), qn(field.column), weight)
+        from_field, to_field = field_name.split('__')
+        field = self.model._meta.get_field(from_field)
+
+        model_pk = '%s.%s' % (qn(self.model._meta.db_table),
+                              qn(self.model._meta.pk.column))
+        agg_name = '%s_agg' % to_field
+
+        q = field.rel.to.objects\
+            .filter(**{'%s__pk' % field.rel.related_name: 1})\
+            .annotate(**{agg_name: StringAgg(to_field)})\
+            .values(agg_name)
+
+        sql = re.sub(
+            r' GROUP(.*?)\)',
+            ')',
+            '(%s)' % q.query.sql_with_params()[0] % model_pk)
+
+        return sql
 
 
 class SearchQuerySet(QuerySet):
@@ -318,6 +359,14 @@ class SearchQuerySet(QuerySet):
             qs = qs.extra(select=select_dict, where=[where], order_by=order)
         
         return qs
+
+    def word_tree_search(self, query, **kwargs):
+        if query:
+            kwargs['raw'] = True
+            query = re.sub('[^a-zA-Z0-9 ]+', '', query)
+            query = re.sub('[ ]+', ' & ', query.strip())
+            query = '%s:*' % query
+        return self.search(query, **kwargs)
 
 
 class SearchManager(SearchManagerMixIn, models.Manager):
