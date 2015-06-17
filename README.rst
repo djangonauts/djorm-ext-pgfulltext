@@ -2,10 +2,12 @@
 djorm-ext-pgfulltext
 ====================
 
+.. image:: https://travis-ci.org/linuxlewis/djorm-ext-pgfulltext.svg
+
 Pgfulltext module of django orm extensions package (collection of third party plugins build in one unified package).
 
 - Now compatible with python2 and python3 with same code base.
-- Ready for django 1.3, 1.4, 1.5 and 1.6
+- Ready for django 1.3, 1.4, 1.5, 1.6, 1.7, 1.8
 
 
 Introduction

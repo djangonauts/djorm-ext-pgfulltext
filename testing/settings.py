@@ -1,5 +1,6 @@
 import os
 import sys
+import django
 
 
 sys.path.insert(0, '..')
@@ -30,4 +31,8 @@ INSTALLED_APPS = (
     'djorm_pgfulltext.tests',
 )
 
-TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
+
+if django.VERSION[:2] >= (1, 5):
+    TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+else:
+    TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
