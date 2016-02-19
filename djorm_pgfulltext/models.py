@@ -112,7 +112,7 @@ class SearchManagerMixIn(object):
             if not getattr(cls, 'update_search_field', None):
                 def update_search_field(self, search_field=None, fields=None, using=None, config=None, extra=None):
                     self._fts_manager.update_search_field(
-                        pk=self.pk, search_field=search_field, fields=fields, using=using, config=config, extra=extra
+                        pk=self.pk, search_field=search_field, fields=fields, using=using or self._state.db, config=config, extra=extra
                     )
 
                 setattr(cls, 'update_search_field', update_search_field)
