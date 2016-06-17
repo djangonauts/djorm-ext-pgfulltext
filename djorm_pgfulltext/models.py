@@ -85,6 +85,7 @@ class SearchManagerMixIn(object):
 
     https://docs.djangoproject.com/en/1.4/howto/initial-data/#providing-initial-sql-data
     """
+    _queryset_class = SearchQuerySet
 
     def __init__(self,
                  fields=None,
@@ -121,9 +122,6 @@ class SearchManagerMixIn(object):
                 models.signals.post_save.connect(auto_update_search_field_handler, sender=cls)
 
         super(SearchManagerMixIn, self).contribute_to_class(cls, name)
-
-    def get_queryset(self):
-        return SearchQuerySet(model=self.model, using=self._db)
 
     def search(self, *args, **kwargs):
         return self.get_queryset().search(*args, **kwargs)
