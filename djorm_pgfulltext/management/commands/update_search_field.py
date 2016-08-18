@@ -9,9 +9,9 @@ from django.db import models
 
 class Command(BaseCommand):
     help = 'Update search fields'
-    args = "appname [model]"
+    args = "appname [model] [using]"
 
-    def handle(self, app=None, model=None, **options):
+    def handle(self, app=None, model=None, using='default', **options):
         if not app:
             raise CommandError("You must provide an app to update search fields.")
 
@@ -46,5 +46,5 @@ class Command(BaseCommand):
 
         for m in app_models_for_process:
             print("Processing model %s..." % m, end='')
-            m._fts_manager.update_search_field()
+            m._fts_manager.update_search_field(using=using)
             print("Done")

@@ -43,7 +43,12 @@ except ImportError:
 
 
 def auto_update_search_field_handler(sender, instance, *args, **kwargs):
-    instance.update_search_field()
+    # to take using from method save()
+    defaults = {'using': 'default'}
+
+    instance.update_search_field(
+        **{arg: kwargs.get(arg, defaults[arg]) for arg in defaults.keys()}
+    )
 
 
 class SearchManagerMixIn(object):
