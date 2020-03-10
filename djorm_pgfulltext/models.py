@@ -60,7 +60,7 @@ class SearchManagerMixIn(object):
     field; if not, they will be made directly in the searched fields.
 
     When using search_field, if auto_update = True, Django signals will be used to
-    automatically syncronize the search_field with the searched fields every time instances
+    automatically synchronize the search_field with the searched fields every time instances
     are saved. If not, you can call to 'update_search_field' method in model instances to do this.
     If search_field not used, both auto_update and update_search_field does nothing. Alternatively,
     you can create a postgresql trigger to do the syncronization at database level, see this:
